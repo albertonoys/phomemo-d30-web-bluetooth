@@ -11,7 +11,7 @@ const labelSize = { width: 40, height: 12 };
 const updateLabelSize = (canvas) => {
 	const inputWidth = $("#inputWidth").valueAsNumber;
 	const inputHeight = $("#inputHeight").valueAsNumber;
-	if (isNaN(inputWidth) || isNaN(inputHeight)) {
+	if (Number.isNaN(inputWidth) || Number.isNaN(inputHeight)) {
 		handleError("label size invalid");
 		return;
 	}
@@ -27,7 +27,7 @@ const updateLabelSize = (canvas) => {
 const updateCanvasText = (canvas) => {
 	const text = $("#inputText").value;
 	const fontSize = $("#inputFontSize").valueAsNumber;
-	if (isNaN(fontSize)) {
+	if (Number.isNaN(fontSize)) {
 		handleError("font size invalid");
 		return;
 	}
@@ -89,7 +89,7 @@ const handleError = (err) => {
 	toast.show();
 };
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
 	const canvas = document.querySelector("#canvas");
 
 	document.addEventListener("shown.bs.tab", (e) => {
@@ -97,17 +97,19 @@ document.addEventListener("DOMContentLoaded", function () {
 		else if (e.target.id === "nav-barcode-tab") updateCanvasBarcode(canvas);
 	});
 
-	$all("#inputWidth, #inputHeight").forEach((e) =>
-		e.addEventListener("input", () => updateLabelSize(canvas))
-	);
+	for (const e of $all("#inputWidth, #inputHeight")) {
+		e.addEventListener("input", () => updateLabelSize(canvas));
+	}
 	updateLabelSize(canvas);
 
-	$all("#inputText, #inputFontSize").forEach((e) =>
-		e.addEventListener("input", () => updateCanvasText(canvas))
-	);
+	for (const e of $all("#inputText, #inputFontSize")) {
+		e.addEventListener("input", () => updateCanvasText(canvas));
+	}
 	updateCanvasText(canvas);
 
-	$("#inputBarcode").addEventListener("input", () => updateCanvasBarcode(canvas));
+	$("#inputBarcode").addEventListener("input", () =>
+		updateCanvasBarcode(canvas),
+	);
 
 	$("form").addEventListener("submit", (e) => {
 		e.preventDefault();
@@ -117,8 +119,12 @@ document.addEventListener("DOMContentLoaded", function () {
 				optionalServices: ["0000ff00-0000-1000-8000-00805f9b34fb"],
 			})
 			.then((device) => device.gatt.connect())
-			.then((server) => server.getPrimaryService("0000ff00-0000-1000-8000-00805f9b34fb"))
-			.then((service) => service.getCharacteristic("0000ff02-0000-1000-8000-00805f9b34fb"))
+			.then((server) =>
+				server.getPrimaryService("0000ff00-0000-1000-8000-00805f9b34fb"),
+			)
+			.then((service) =>
+				service.getCharacteristic("0000ff02-0000-1000-8000-00805f9b34fb"),
+			)
 			.then((char) => printCanvas(char, canvas))
 			.catch(handleError);
 	});
