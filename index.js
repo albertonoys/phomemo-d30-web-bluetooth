@@ -7,11 +7,39 @@ const $ = document.querySelector.bind(document);
 const $all = document.querySelectorAll.bind(document);
 
 const labelSize = { width: 40, height: 12 };
+let printerCharacteristic = null;
+
+const addLog = (message) => {
+	const log = $("#operationLog");
+	const timestamp = new Date().toLocaleTimeString();
+	const logEntry = document.createElement("div");
+	logEntry.textContent = `[${timestamp}] ${message}`;
+	log.appendChild(logEntry);
+	log.scrollTop = log.scrollHeight;
+};
+
+// const clearLogs = () => {
+// 	const log = $("#operationLog");
+// 	log.innerHTML = '';
+// };
+
+const getGridLayout = () => {
+	const selectedLayout = document.querySelector('input[name="gridLayout"]:checked').value;
+	switch (selectedLayout) {
+		case "2x1":
+			return { rows: 1, cols: 2 };
+		case "2x2":
+			return { rows: 2, cols: 2 };
+		default:
+			return { rows: 1, cols: 1 };
+	}
+};
 
 const createPreviewCanvas = () => {
 	const canvas = document.createElement("canvas");
-	canvas.width = labelSize.height * 8;
-	canvas.height = labelSize.width * 8;
+	const grid = getGridLayout();
+	canvas.width = labelSize.height * 8 * grid.cols;
+	canvas.height = labelSize.width * 8 * grid.rows;
 	return canvas;
 };
 
@@ -62,9 +90,10 @@ const updateLabelSize = (canvas) => {
 	labelSize.width = inputWidth;
 	labelSize.height = inputHeight;
 
+	const grid = getGridLayout();
 	// Image sent to printer is printed top to bottom, so reverse width and height
-	canvas.width = labelSize.height * 8;
-	canvas.height = labelSize.width * 8;
+	canvas.width = labelSize.height * 8 * grid.cols;
+	canvas.height = labelSize.width * 8 * grid.rows;
 };
 
 const updateCanvasText = (canvas) => {
@@ -76,9 +105,14 @@ const updateCanvasText = (canvas) => {
 	}
 
 	const ctx = canvas.getContext("2d");
+	const grid = getGridLayout();
+
+	// Clear the entire canvas
 	ctx.fillStyle = "#fff";
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+	// Draw text across the entire grid as one continuous canvas
+	ctx.save();
 	ctx.translate(canvas.width / 2, canvas.height / 2);
 	ctx.rotate(Math.PI / 2);
 
@@ -94,32 +128,34 @@ const updateCanvasText = (canvas) => {
 		fontSize,
 	});
 
-	ctx.rotate(-Math.PI / 2);
-	ctx.translate(-canvas.width / 2, -canvas.height / 2);
+	ctx.restore();
 };
 
 const updateCanvasBarcode = (canvas) => {
 	const barcodeData = $("#inputBarcode").value;
+	const grid = getGridLayout();
+
+	const ctx = canvas.getContext("2d");
+	ctx.fillStyle = "#fff";
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+
 	const image = document.createElement("img");
 	image.addEventListener("load", () => {
-		const ctx = canvas.getContext("2d");
-		ctx.fillStyle = "#fff";
-		ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+		// Draw barcode across the entire grid as one continuous canvas
+		ctx.save();
 		ctx.translate(canvas.width / 2, canvas.height / 2);
 		ctx.rotate(Math.PI / 2);
 
 		ctx.imageSmoothingEnabled = false;
 		ctx.drawImage(image, -image.width / 2, -image.height / 2);
 
-		ctx.rotate(-Math.PI / 2);
-		ctx.translate(-canvas.width / 2, -canvas.height / 2);
+		ctx.restore();
 	});
 
 	JsBarcode(image, barcodeData, {
 		format: "CODE128",
 		width: 2,
-		height: labelSize.height * 7,
+		height: labelSize.height * 7 * Math.max(grid.rows, grid.cols), // Scale barcode height based on grid size
 		displayValue: false,
 	});
 };
@@ -130,6 +166,138 @@ const handleError = (err) => {
 	const toast = bootstrap.Toast.getOrCreateInstance($("#errorToast"));
 	$("#errorText").textContent = err.toString();
 	toast.show();
+};
+
+const updateConnectionStatus = (connected, deviceName = '') => {
+	const status = $("#connectionStatus");
+	const connectBtn = $("#connectToggleBtn");
+	status.style.display = 'block';
+	if (connected) {
+		status.className = 'alert alert-success mb-3';
+		$("#connectionState").textContent = `Connected to ${deviceName}`;
+		connectBtn.textContent = 'Disconnect';
+		connectBtn.className = 'btn btn-secondary';
+		$("#printBtn").disabled = false;
+		addLog(`Connected to printer: ${deviceName}`);
+	} else {
+		status.className = 'alert alert-info mb-3';
+		$("#connectionState").textContent = 'Not connected';
+		connectBtn.textContent = 'Connect';
+		connectBtn.className = 'btn btn-primary';
+		$("#printBtn").disabled = true;
+		printerCharacteristic = null;
+		addLog('Disconnected from printer');
+	}
+};
+
+const togglePrinterConnection = async () => {
+	if (printerCharacteristic) {
+		// If connected, disconnect
+		try {
+			addLog('Disconnecting from printer...');
+			await printerCharacteristic.service.device.gatt.disconnect();
+			updateConnectionStatus(false);
+		} catch (error) {
+			handleError(error);
+		}
+	} else {
+		// If disconnected, connect
+		try {
+			addLog('Requesting Bluetooth device...');
+			const device = await navigator.bluetooth.requestDevice({
+				acceptAllDevices: true,
+				optionalServices: ["0000ff00-0000-1000-8000-00805f9b34fb"],
+			});
+
+			addLog('Connecting to GATT server...');
+			const server = await device.gatt.connect();
+
+			addLog('Getting primary service...');
+			const service = await server.getPrimaryService("0000ff00-0000-1000-8000-00805f9b34fb");
+
+			addLog('Getting characteristic...');
+			printerCharacteristic = await service.getCharacteristic("0000ff02-0000-1000-8000-00805f9b34fb");
+
+			updateConnectionStatus(true, device.name);
+
+			// Listen for disconnection
+			device.addEventListener('gattserverdisconnected', () => {
+				addLog('Printer disconnected unexpectedly');
+				updateConnectionStatus(false);
+			});
+		} catch (error) {
+			handleError(error);
+		}
+	}
+};
+
+const printLabels = async () => {
+	if (!printerCharacteristic) {
+		handleError("Not connected to printer");
+		return;
+	}
+
+	const copies = $("#inputCopies").valueAsNumber;
+	if (Number.isNaN(copies) || copies < 1) {
+		handleError("Number of copies must be at least 1");
+		return;
+	}
+
+	try {
+		addLog(`Starting print job: ${copies} copy/copies`);
+		const grid = getGridLayout();
+		const cellWidth = canvas.width / grid.cols;
+		const cellHeight = canvas.height / grid.rows;
+
+		// Create a temporary canvas for each sticker
+		const tempCanvas = document.createElement("canvas");
+		tempCanvas.width = labelSize.height * 8;  // Single sticker width
+		tempCanvas.height = labelSize.width * 8;  // Single sticker height
+		const tempCtx = tempCanvas.getContext("2d");
+
+		for (let copy = 0; copy < copies; copy++) {
+			addLog(`Printing copy ${copy + 1} of ${copies}`);
+			// For each copy, print all stickers in the grid
+			for (let row = 0; row < grid.rows; row++) {
+				for (let col = 0; col < grid.cols; col++) {
+					// Clear the temporary canvas
+					tempCtx.fillStyle = "#fff";
+					tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+					// Copy the corresponding section from the main canvas
+					tempCtx.drawImage(
+						canvas,
+						col * cellWidth,
+						row * cellHeight,
+						cellWidth,
+						cellHeight,
+						0,
+						0,
+						tempCanvas.width,
+						tempCanvas.height
+					);
+
+					// Print the sticker
+					addLog(`Printing sticker ${row * grid.cols + col + 1} of ${grid.rows * grid.cols}`);
+					await printCanvas(printerCharacteristic, tempCanvas);
+
+					// Add a small delay between stickers
+					if (col < grid.cols - 1 || row < grid.rows - 1) {
+						await new Promise((resolve) => setTimeout(resolve, 500));
+					}
+				}
+			}
+
+			// Add a longer delay between copies
+			if (copy < copies - 1) {
+				addLog('Waiting between copies...');
+				await new Promise((resolve) => setTimeout(resolve, 1000));
+			}
+		}
+		addLog('Print job completed successfully');
+	} catch (error) {
+		handleError(error);
+	}
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -157,35 +325,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	$("#inputCopies").addEventListener("input", () => updatePreviewContainer());
 
-	$("form").addEventListener("submit", (e) => {
-		e.preventDefault();
-		const copies = $("#inputCopies").valueAsNumber;
-		if (Number.isNaN(copies) || copies < 1) {
-			handleError("Number of copies must be at least 1");
-			return;
-		}
+	// Add event listener for grid layout changes
+	for (const e of $all('input[name="gridLayout"]')) {
+		e.addEventListener("change", () => {
+			updateLabelSize(canvas);
+			updateAllPreviews();
+		});
+	}
 
-		navigator.bluetooth
-			.requestDevice({
-				acceptAllDevices: true,
-				optionalServices: ["0000ff00-0000-1000-8000-00805f9b34fb"],
-			})
-			.then((device) => device.gatt.connect())
-			.then((server) =>
-				server.getPrimaryService("0000ff00-0000-1000-8000-00805f9b34fb"),
-			)
-			.then((service) =>
-				service.getCharacteristic("0000ff02-0000-1000-8000-00805f9b34fb"),
-			)
-			.then(async (char) => {
-				for (let i = 0; i < copies; i++) {
-					await printCanvas(char, canvas);
-					if (i < copies - 1) {
-						// Add a small delay between prints to ensure proper spacing
-						await new Promise((resolve) => setTimeout(resolve, 500));
-					}
-				}
-			})
-			.catch(handleError);
-	});
+	// Add event listeners for the buttons
+	$("#connectToggleBtn").addEventListener("click", togglePrinterConnection);
+	$("#printBtn").addEventListener("click", printLabels);
+	// $("#clearLogsBtn").addEventListener("click", clearLogs);
+
+	// Initialize connection status
+	updateConnectionStatus(false);
 });

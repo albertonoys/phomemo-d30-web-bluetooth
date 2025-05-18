@@ -16,7 +16,7 @@
 		<link rel="stylesheet" href="index.css" />
 	</head>
 	<body>
-		<div class="container my-4">
+		<div class="container-lg my-4">
 			<h1>Phomemo D30 Web Bluetooth</h1>
 			<nav class="mb-3">
 				<div class="nav nav-tabs" id="nav-tab" role="tablist">
@@ -46,95 +46,137 @@
 					</button>
 				</div>
 			</nav>
-			<form class="col-lg-6">
-				<div class="tab-content mb-3" id="nav-tabContent">
-					<div
-						class="tab-pane show active"
-						id="nav-text"
-						role="tabpanel"
-						aria-labelledby="nav-text-tab"
-						tabindex="0"
-					>
-						<h2>Text</h2>
-						<label for="inputFontSize" class="form-label">Font size</label>
-						<div class="input-group mb-2">
-							<input
-								type="number"
-								step="1"
-								min="1"
-								value="48"
-								size="10"
-								class="form-control flex-grow-0"
-								style="width: 4rem"
-								id="inputFontSize"
-							/>
-							<span class="input-group-text">px</span>
-						</div>
-						<label for="inputText" class="form-label">Text to print</label>
-						<textarea class="form-control" id="inputText">Hello world</textarea>
-						<label for="inputCopies" class="form-label">Number of copies: <span id="copiesValue">1</span></label>
-						<input
-							type="range"
-							min="1"
-							max="10"
-							value="1"
-							class="form-range"
-							id="inputCopies"
-							oninput="document.getElementById('copiesValue').textContent=this.value"
-						/>
-					</div>
-					<div
-						class="tab-pane"
-						id="nav-barcode"
-						role="tabpanel"
-						aria-labelledby="nav-barcode-tab"
-						tabindex="0"
-					>
-						<h2>Barcode</h2>
-						<label for="inputBarcode" class="form-label">Barcode data (CODE128)</label>
-						<input type="text" class="form-control" value="123456" id="inputBarcode" />
-					</div>
-				</div>
-
-				<div>
-					<h2>Label size</h2>
-					<div class="input-group mb-3">
-						<span class="input-group-text">Width (mm)</span>
-						<input
-							type="number"
-							step="1"
-							class="form-control"
-							value="40"
-							aria-label="Width"
-							id="inputWidth"
-						/>
-						<span class="input-group-text">Height (mm)</span>
-						<input
-							type="number"
-							step="1"
-							class="form-control"
-							value="12"
-							aria-label="Height"
-							id="inputHeight"
-						/>
-					</div>
-				</div>
-
-				<div class="d-flex flex-column align-items-start mb-3">
-					<h2>Preview</h2>
-					<p>Images are sent to printer vertically.</p>
-
-					<div id="previewContainer" class="d-flex flex-row gap-2">
-						<div class="card shadow-sm">
-							<div class="card-body p-1">
-								<canvas id="canvas"></canvas>
+			<div class="row">
+				<div class="col-lg-6">
+					<form>
+						<div class="tab-content mb-3" id="nav-tabContent">
+							<div
+								class="tab-pane show active"
+								id="nav-text"
+								role="tabpanel"
+								aria-labelledby="nav-text-tab"
+								tabindex="0"
+							>
+								<h2>Text</h2>
+								<label for="inputFontSize" class="form-label">Font size</label>
+								<div class="input-group mb-3">
+									<input
+										type="number"
+										step="1"
+										min="1"
+										value="48"
+										size="10"
+										class="form-control flex-grow-0"
+										style="width: 4rem"
+										id="inputFontSize"
+									/>
+									<span class="input-group-text">px</span>
+								</div>
+								<label for="inputText" class="form-label">Text to print</label>
+								<textarea class="form-control mb-3" id="inputText">Hello world</textarea>
+								<label for="inputCopies" class="form-label">Number of copies: <span id="copiesValue">1</span></label>
+								<input
+									type="range"
+									min="1"
+									max="10"
+									value="1"
+									class="form-range"
+									id="inputCopies"
+									oninput="document.getElementById('copiesValue').textContent=this.value"
+								/>
+							</div>
+							<div
+								class="tab-pane"
+								id="nav-barcode"
+								role="tabpanel"
+								aria-labelledby="nav-barcode-tab"
+								tabindex="0"
+							>
+								<h2>Barcode</h2>
+								<label for="inputBarcode" class="form-label">Barcode data (CODE128)</label>
+								<input type="text" class="form-control mb-3" value="123456" id="inputBarcode" />
 							</div>
 						</div>
+
+						<div>
+							<h2>Label size</h2>
+							<div class="input-group mb-3">
+								<span class="input-group-text">Width (mm)</span>
+								<input
+									type="number"
+									step="1"
+									class="form-control"
+									value="40"
+									aria-label="Width"
+									id="inputWidth"
+								/>
+								<span class="input-group-text">Height (mm)</span>
+								<input
+									type="number"
+									step="1"
+									class="form-control"
+									value="12"
+									aria-label="Height"
+									id="inputHeight"
+								/>
+							</div>
+						</div>
+
+						<div>
+							<h2>Grid Layout</h2>
+							<div class="form-check mb-3">
+								<input class="form-check-input" type="radio" name="gridLayout" id="grid1x1" value="1x1" checked>
+								<label class="form-check-label" for="grid1x1">
+									1x1 (Single sticker)
+								</label>
+							</div>
+							<div class="form-check mb-3">
+								<input class="form-check-input" type="radio" name="gridLayout" id="grid2x1" value="2x1">
+								<label class="form-check-label" for="grid2x1">
+									2x1 (Two stickers side by side)
+								</label>
+							</div>
+							<div class="form-check mb-3">
+								<input class="form-check-input" type="radio" name="gridLayout" id="grid2x2" value="2x2">
+								<label class="form-check-label" for="grid2x2">
+									2x2 (Four stickers in a grid)
+								</label>
+							</div>
+						</div>
+
+						<div class="d-flex flex-column align-items-start mb-3">
+							<h2>Preview</h2>
+							<p>Images are sent to printer vertically.</p>
+
+							<div id="previewContainer" class="d-flex flex-row gap-2">
+								<div class="card shadow-sm">
+									<div class="card-body p-1">
+										<canvas id="canvas"></canvas>
+									</div>
+								</div>
+							</div>
+						</div>
+					</form>
+				</div>
+				<div class="col-lg-6">
+					<div class="d-flex gap-2 mb-3">
+						<button type="button" id="connectToggleBtn" class="btn btn-primary">Connect</button>
+						<button type="button" id="printBtn" class="btn btn-success" disabled>Print</button>
+					</div>
+					<div class="card">
+						<div class="card-header d-flex justify-content-between align-items-center">
+							<h2 class="h5 mb-0">Connection Status</h2>
+							<!-- <button type="button" class="btn-close" id="clearLogsBtn" aria-label="Clear logs"></button> -->
+						</div>
+						<div class="card-body">
+							<div id="connectionStatus" class="alert alert-info mb-3" style="display: none;">
+								<div id="connectionState">Not connected</div>
+							</div>
+							<div id="operationLog" class="small text-muted" style="height: 400px; overflow-y: auto;"></div>
+						</div>
 					</div>
 				</div>
-
-				<button type="submit" class="btn btn-primary">Connect &amp; print</button>
-			</form>
+			</div>
 		</div>
 
 		<div class="toast-container position-fixed bottom-0 start-0 p-3">
