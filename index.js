@@ -8,6 +8,49 @@ const $all = document.querySelectorAll.bind(document);
 
 const labelSize = { width: 40, height: 12 };
 
+const createPreviewCanvas = () => {
+	const canvas = document.createElement("canvas");
+	canvas.width = labelSize.height * 8;
+	canvas.height = labelSize.width * 8;
+	return canvas;
+};
+
+const updatePreviewContainer = () => {
+	const container = $("#previewContainer");
+	const copies = $("#inputCopies").valueAsNumber;
+
+	// Clear existing previews except the first one
+	while (container.children.length > 1) {
+		container.removeChild(container.lastChild);
+	}
+
+	// Add new previews
+	for (let i = 1; i < copies; i++) {
+		const card = document.createElement("div");
+		card.className = "card shadow-sm";
+		const cardBody = document.createElement("div");
+		cardBody.className = "card-body p-1";
+		const canvas = createPreviewCanvas();
+		cardBody.appendChild(canvas);
+		card.appendChild(cardBody);
+		container.appendChild(card);
+	}
+
+	// Update all canvases
+	updateAllPreviews();
+};
+
+const updateAllPreviews = () => {
+	const canvases = $all("#previewContainer canvas");
+	for (const canvas of canvases) {
+		if ($("#nav-text-tab").classList.contains("active")) {
+			updateCanvasText(canvas);
+		} else {
+			updateCanvasBarcode(canvas);
+		}
+	}
+};
+
 const updateLabelSize = (canvas) => {
 	const inputWidth = $("#inputWidth").valueAsNumber;
 	const inputHeight = $("#inputHeight").valueAsNumber;
@@ -93,23 +136,26 @@ document.addEventListener("DOMContentLoaded", () => {
 	const canvas = document.querySelector("#canvas");
 
 	document.addEventListener("shown.bs.tab", (e) => {
-		if (e.target.id === "nav-text-tab") updateCanvasText(canvas);
-		else if (e.target.id === "nav-barcode-tab") updateCanvasBarcode(canvas);
+		if (e.target.id === "nav-text-tab") updateAllPreviews();
+		else if (e.target.id === "nav-barcode-tab") updateAllPreviews();
 	});
 
 	for (const e of $all("#inputWidth, #inputHeight")) {
-		e.addEventListener("input", () => updateLabelSize(canvas));
+		e.addEventListener("input", () => {
+			updateLabelSize(canvas);
+			updateAllPreviews();
+		});
 	}
 	updateLabelSize(canvas);
 
 	for (const e of $all("#inputText, #inputFontSize")) {
-		e.addEventListener("input", () => updateCanvasText(canvas));
+		e.addEventListener("input", () => updateAllPreviews());
 	}
 	updateCanvasText(canvas);
 
-	$("#inputBarcode").addEventListener("input", () =>
-		updateCanvasBarcode(canvas),
-	);
+	$("#inputBarcode").addEventListener("input", () => updateAllPreviews());
+
+	$("#inputCopies").addEventListener("input", () => updatePreviewContainer());
 
 	$("form").addEventListener("submit", (e) => {
 		e.preventDefault();
@@ -136,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
 					await printCanvas(char, canvas);
 					if (i < copies - 1) {
 						// Add a small delay between prints to ensure proper spacing
-						await new Promise(resolve => setTimeout(resolve, 500));
+						await new Promise((resolve) => setTimeout(resolve, 500));
 					}
 				}
 			})
