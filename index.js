@@ -113,6 +113,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	$("form").addEventListener("submit", (e) => {
 		e.preventDefault();
+		const copies = $("#inputCopies").valueAsNumber;
+		if (Number.isNaN(copies) || copies < 1) {
+			handleError("Number of copies must be at least 1");
+			return;
+		}
+
 		navigator.bluetooth
 			.requestDevice({
 				acceptAllDevices: true,
@@ -125,7 +131,15 @@ document.addEventListener("DOMContentLoaded", () => {
 			.then((service) =>
 				service.getCharacteristic("0000ff02-0000-1000-8000-00805f9b34fb"),
 			)
-			.then((char) => printCanvas(char, canvas))
+			.then(async (char) => {
+				for (let i = 0; i < copies; i++) {
+					await printCanvas(char, canvas);
+					if (i < copies - 1) {
+						// Add a small delay between prints to ensure proper spacing
+						await new Promise(resolve => setTimeout(resolve, 500));
+					}
+				}
+			})
 			.catch(handleError);
 	});
 });
