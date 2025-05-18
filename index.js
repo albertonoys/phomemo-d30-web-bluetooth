@@ -18,11 +18,6 @@ const addLog = (message) => {
 	log.scrollTop = log.scrollHeight;
 };
 
-// const clearLogs = () => {
-// 	const log = $("#operationLog");
-// 	log.innerHTML = '';
-// };
-
 const getGridLayout = () => {
 	const selectedLayout = document.querySelector('input[name="gridLayout"]:checked').value;
 	switch (selectedLayout) {
@@ -336,7 +331,6 @@ document.addEventListener("DOMContentLoaded", () => {
 	// Add event listeners for the buttons
 	$("#connectToggleBtn").addEventListener("click", togglePrinterConnection);
 	$("#printBtn").addEventListener("click", printLabels);
-	// $("#clearLogsBtn").addEventListener("click", clearLogs);
 
 	// Initialize connection status
 	updateConnectionStatus(false);
