@@ -155,7 +155,7 @@ const updateCanvasBarcode = (canvas) => {
 	});
 };
 
-const drawImageToCanvas = (ctx, url, doScale = true) => {
+const drawImageToCanvas = (ctx, canvas, url, doScale = true) => {
 	const img = new Image();
 	img.addEventListener("load", () => {
 		ctx.fillStyle = "#fff";
@@ -192,7 +192,7 @@ const updateCanvasImage = (canvas) => {
 
 	const reader = new FileReader();
 	reader.addEventListener("load", (e) => {
-		drawImageToCanvas(ctx, e.target.result);
+		drawImageToCanvas(ctx, canvas, e.target.result);
 	});
 	reader.addEventListener("error", () => {
 		handleError("failed to read image file");
@@ -205,7 +205,7 @@ const updateCanvasQR = async (canvas) => {
 	const data = $("#inputQR").value;
 	const ctx = canvas.getContext("2d");
 	const qrImg = await QRCode.toDataURL(data, { width: canvas.width - 8, margin: 2 });
-	drawImageToCanvas(ctx, qrImg, false);
+	drawImageToCanvas(ctx, canvas, qrImg, false);
 };
 
 const updateCanvasQRText = async (canvas) => {
@@ -351,7 +351,7 @@ const togglePrinterConnection = async () => {
 	}
 };
 
-const printLabels = async () => {
+const printLabels = async (canvas) => {
 	if (!printerCharacteristic) {
 		handleError("Not connected to printer");
 		return;
@@ -463,7 +463,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// Add event listeners for the buttons
 	$("#connectToggleBtn").addEventListener("click", togglePrinterConnection);
-	$("#printBtn").addEventListener("click", printLabels);
+	$("#printBtn").addEventListener("click", () => printLabels(canvas));
 
 	// Initialize connection status
 	updateConnectionStatus(false);
