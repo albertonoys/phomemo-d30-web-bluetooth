@@ -3,8 +3,19 @@
 	<head>
 		<title>Phomemo D30 Web Bluetooth</title>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<meta name="description" content="Web interface for Phomemo D30 Bluetooth printer" />
+
+		<!-- PWA -->
+		<link rel="manifest" href="manifest.json" />
+		<meta name="theme-color" content="#5646f0" />
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<meta name="apple-mobile-web-app-title" content="D30 Labels" />
+		<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+		<link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+		<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
 
 		<link
 			rel="stylesheet"
@@ -46,6 +57,42 @@
 						aria-selected="false"
 					>
 						Barcode
+					</button>
+					<button
+						class="nav-link"
+						id="nav-image-tab"
+						data-bs-toggle="tab"
+						data-bs-target="#nav-image"
+						type="button"
+						role="tab"
+						aria-controls="nav-image"
+						aria-selected="false"
+					>
+						Image
+					</button>
+					<button
+						class="nav-link"
+						id="nav-qr-tab"
+						data-bs-toggle="tab"
+						data-bs-target="#nav-qr"
+						type="button"
+						role="tab"
+						aria-controls="nav-qr"
+						aria-selected="false"
+					>
+						QR Code
+					</button>
+					<button
+						class="nav-link"
+						id="nav-qr-text-tab"
+						data-bs-toggle="tab"
+						data-bs-target="#nav-qr-text"
+						type="button"
+						role="tab"
+						aria-controls="nav-qr-text"
+						aria-selected="false"
+					>
+						QR Code + Text
 					</button>
 				</div>
 			</nav>
@@ -120,6 +167,78 @@
 										id="inputBarcode"
 										required
 									/>
+								</div>
+							</section>
+
+							<section
+								class="tab-pane"
+								id="nav-image"
+								role="tabpanel"
+								aria-labelledby="nav-image-tab"
+							>
+								<h2>Image</h2>
+								<div class="mb-3">
+									<label for="inputImage" class="form-label">Image file</label>
+									<input type="file" class="form-control" id="inputImage" />
+								</div>
+							</section>
+
+							<section
+								class="tab-pane"
+								id="nav-qr"
+								role="tabpanel"
+								aria-labelledby="nav-qr-tab"
+							>
+								<h2>QR Code</h2>
+								<div class="mb-3">
+									<label for="inputQR" class="form-label">QR code data</label>
+									<input
+										type="text"
+										class="form-control"
+										value="https://example.com"
+										id="inputQR"
+									/>
+								</div>
+							</section>
+
+							<section
+								class="tab-pane"
+								id="nav-qr-text"
+								role="tabpanel"
+								aria-labelledby="nav-qr-text-tab"
+							>
+								<h2>QR Code</h2>
+								<div class="mb-3">
+									<label for="inputQRTextData" class="form-label">QR code data</label>
+									<input
+										type="text"
+										class="form-control"
+										value="https://example.com"
+										id="inputQRTextData"
+									/>
+								</div>
+
+								<h2>Text</h2>
+								<div class="mb-3">
+									<label for="inputQRTextSize" class="form-label">Font size</label>
+									<div class="input-group">
+										<input
+											type="number"
+											step="1"
+											min="1"
+											value="28"
+											size="10"
+											class="form-control flex-grow-0"
+											style="width: 6rem"
+											id="inputQRTextSize"
+										/>
+										<span class="input-group-text">px</span>
+									</div>
+								</div>
+
+								<div class="mb-3">
+									<label for="inputQRText" class="form-label">Text to print</label>
+									<textarea class="form-control" id="inputQRText">example.com</textarea>
 								</div>
 							</section>
 						</div>
@@ -271,6 +390,16 @@
 			referrerpolicy="no-referrer"
 			defer
 		></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js" integrity="sha512-PEhlWBZBrQL7flpJPY8lXx8tIN7HWX912GzGhFTDqA3iWFrakVH3lVHomCoU9BhfKzgxfEk6EG2C3xej+9srOQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 		<script type="module" src="index.js" defer></script>
+		<script>
+			if ("serviceWorker" in navigator) {
+				window.addEventListener("load", () =>
+					navigator.serviceWorker
+						.register("sw.js")
+						.catch((err) => console.warn("SW registration failed:", err)),
+				);
+			}
+		</script>
 	</body>
 </html>
